@@ -1,0 +1,49 @@
+stages:
+  - dev
+  - stage
+  - live
+
+buildDev:
+  stage: dev
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add $HOME/.ssh/$SSH_KEY_FILE
+    - export ANSIBLE_HOST_KEY_CHECKING=False
+  script:
+    - git clone <dev version ansible repository> ansible
+    - ansible-playbook -i ansible/hosts -e "project_dir=${CI_PROJECT_DIR} project_name=${CI_PROJECT_NAME}" ansible/dev.yml
+  only:
+    - dev
+  tags:
+    - front
+    - shell
+
+buildStage:
+  stage: stage
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add $HOME/.ssh/$SSH_KEY_FILE
+    - export ANSIBLE_HOST_KEY_CHECKING=False
+  script:
+    - git clone <stage version ansible repository> ansible
+    - ansible-playbook -i ansible/hosts -e "project_dir=${CI_PROJECT_DIR} project_name=${CI_PROJECT_NAME}" ansible/stage.yml
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^stage-v.*$/'
+  tags:
+    - front
+    - shell
+
+buildLive:
+  stage: live
+  before_script:
+    - eval $(ssh-agent -s)
+    - ssh-add $HOME/.ssh/$SSH_KEY_FILE
+    - export ANSIBLE_HOST_KEY_CHECKING=False
+  script:
+    - git clone <live version ansible repository> ansible
+    - ansible-playbook -i ansible/hosts -e "project_dir=${CI_PROJECT_DIR} project_name=${CI_PROJECT_NAME}" ansible/live.yml
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^main-v.*$/'
+  tags:
+    - front
+    - shell
